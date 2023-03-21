@@ -1,0 +1,16 @@
+﻿@model DiplomaProject.Models.Indicator
+
+<h2>Edit indicator</h2>
+<form asp-action="edit" asp-controller="home" asp-route-id="@Model.Id">
+    <p>
+        <label asp-for="X">X</label><br />
+        <input type="number" asp-for="X" />
+    </p>
+    <p>
+        <label asp-for="Y">Y</label><br />
+        <input type="number" asp-for="Y" />
+    </p>
+    <p>
+        <input type="submit" value="Save" />
+    </p>
+</form>

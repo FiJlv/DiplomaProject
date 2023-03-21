@@ -3,5 +3,27 @@
 }
 
 <div class="text-center">
- 1
+    <h2>Список пользователей</h2>
+    <p><a asp-action="Create">Add indicator</a></p>
+    <table class="table">
+     <tr><th>X</th><th>Y</th></tr>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.X</td>
+                <td>@item.Y</td>
+
+                <td>
+                <a asp-action="Edit" asp-controller="Home" asp-route-id="@item.Id">Update</a>
+                </td>
+
+                <td>
+                    <form asp-controller="Home" asp-action="Delete" method="post"  asp-route-id="@item.Id">
+                        <input type="submit" value="Delete" />
+                    </form>
+                </td>
+
+            </tr>
+        }
+    </table>
 </div>
