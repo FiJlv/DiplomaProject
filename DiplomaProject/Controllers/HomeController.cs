@@ -16,11 +16,6 @@ namespace DiplomaProject.Controllers
             db = context;
         }
 
-        public IActionResult GetIndicators()
-        {
-            return Json(db.Indicators.ToList());
-        }
-
         [HttpPost]
         public async Task<IActionResult> UploadBackground(IFormFile imageFile)
         {
@@ -29,11 +24,14 @@ namespace DiplomaProject.Controllers
                 // сохраняем в бд
                 using (var stream = new MemoryStream())
                 {
+                    // копируем файл в поток
                     await imageFile.CopyToAsync(stream);
+
                     var background = new Background
                     {
                         Image = Convert.ToBase64String(stream.ToArray())
                     };
+
                     db.Backgrounds.Add(background);
                     db.SaveChanges();
                 }
@@ -43,9 +41,9 @@ namespace DiplomaProject.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetBackgroundImage()
+        public IActionResult GetBackgroundImage(int id)
         {
-            var background = db.Backgrounds.FirstOrDefault();
+            var background = db.Backgrounds.FirstOrDefault(b => b.Id == id);
             if (background != null)
             {
                 byte[] bytes = Convert.FromBase64String(background.Image);
@@ -58,7 +56,27 @@ namespace DiplomaProject.Controllers
         }
 
         [HttpPost]
-        public ActionResult SaveInput(int x, int y, int temperatureValues)
+        public async Task<IActionResult> Delete(Guid? id)
+        {
+            var indicator = await db.Indicators.FindAsync(id);
+
+            if (indicator != null)
+            {
+                db.Remove(indicator);
+                await db.SaveChangesAsync();
+                return RedirectToAction("Index");
+            }
+
+            return NotFound();
+        }
+
+        public IActionResult GetIndicators()
+        {
+            return Json(db.Indicators.ToList());
+        }
+
+        [HttpPost]
+        public ActionResult SaveInput(int x, int y, string temperatureValues)
         {
             var input = new Indicator
             {
@@ -78,33 +96,17 @@ namespace DiplomaProject.Controllers
             return View(await db.Indicators.ToListAsync());
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Delete(Guid? id)
+        [HttpGet]
+        public ActionResult GenerateValues()
         {
-            if (id != null)
+            string values = "";
+            for (int i = 0; i < 100; i++)
             {
-                Indicator user = new Indicator { Id = id.Value };
-                db.Entry(user).State = EntityState.Deleted;
-                await db.SaveChangesAsync();
-                return RedirectToAction("Index");
+                values += new Random().Next(30, 46) + ",";
             }
-            return NotFound();
-        }
-        public async Task<IActionResult> Edit(Guid? id)
-        {
-            if (id != null)
-            {
-                Indicator? indicator = await db.Indicators.FirstOrDefaultAsync(p => p.Id == id);
-                if (indicator != null) return View(indicator);
-            }
-            return NotFound();
-        }
-        [HttpPost]
-        public async Task<IActionResult> Edit(Indicator indicator)
-        {
-            db.Indicators.Update(indicator);
-            await db.SaveChangesAsync();
-            return RedirectToAction("Index");
+            values = values.TrimEnd(',');
+
+            return Json(values);
         }
     }
 }
