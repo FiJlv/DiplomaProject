@@ -7,6 +7,14 @@
 
 <script>
 
+    function generateLabels(length) {
+        var labels = [];
+        for (var i = 1; i <= length; i++) {
+            labels.push(i + "s");
+        }
+        return labels;
+    }
+
     function createInputAndButton(x, y, values) {
 
         var input = document.createElement("input");
@@ -18,6 +26,14 @@
         input.style.left = x + "px";
         input.value = "";
         document.body.appendChild(input);
+
+        var deleteButton = document.createElement("button");
+        deleteButton.innerText = "Delete";
+        deleteButton.style.position = "absolute";
+        deleteButton.style.top = (y + 30) + "px";
+        deleteButton.style.left = (x + 120) + "px";
+        deleteButton.type = "button";
+        document.body.appendChild(deleteButton);
 
         var button = document.createElement("button");
         button.innerText = "Show Graph";
@@ -32,56 +48,6 @@
             return parseInt(num.trim(), 10);
         });
 
-        button.addEventListener("click", function () {
-            var canvas = document.createElement("canvas");
-            canvas.width = 200;
-            canvas.height = 200;
-            canvas.style.position = "absolute";
-            canvas.style.top = (y + 45) + "px";
-            canvas.style.left = x + "px";
-
-            document.body.appendChild(canvas);
-
-            var data = {
-                labels: ["1s", "2s", "3s", "4s", "5s", "6s", "7s", "8s", "9s", "10s",
-                    "11s", "12s", "13s", "14s", "15s", "16s", "17s", "18s", "19s", "20s",
-                    "21s", "22s", "23s", "24s", "25s", "26s", "27s", "28s", "29s", "30s"],
-                datasets: [{
-                    label: "Temperature",
-                    backgroundColor: "rgba(153, 102, 255, 0.1)",
-                    borderColor: "rgba(153, 102, 255, 0.5)",
-                    borderWidth: 1,
-                    data: /*[]*/ valuesArr
-                }]
-            };
-
-            var chart = new Chart(canvas, {
-                type: "line",
-                data: data,
-                options: {
-                    responsive: false,
-                    scales: {
-                        yAxes: [{
-                            ticks: {
-                                beginAtZero: true
-                            }
-                        }]
-                    }
-                }
-            });
-            //var currentIndex = 0;
-            //var intervalId = setInterval(function () {
-            //    if (currentIndex < valuesArr.length) {
-            //        input.value = valuesArr[currentIndex];
-            //        chart.data.datasets[0].data.push(valuesArr[currentIndex]);
-            //        chart.update();
-            //        currentIndex++;
-            //    } else {
-            //        clearInterval(intervalId);
-            //    }
-            //}, 1000);
-        });
-
         var currentIndex = 0;
         var intervalId = setInterval(function () {
             if (currentIndex < valuesArr.length) {
@@ -90,12 +56,93 @@
             } else {
                 clearInterval(intervalId);
             }
-        }, 1000);
+        }, 2000);
+
+        button.addEventListener("click", function () {
+            var canvas = document.querySelector("canvas");
+            if (canvas) {
+                canvas.remove();
+                button.innerText = "Show Graph";
+            } else {
+                canvas = document.createElement("canvas");
+                canvas.width = 300;
+                canvas.height = 200;
+                canvas.style.position = "absolute";
+                canvas.style.top = (y + 45) + "px";
+                canvas.style.left = x + "px";
+
+                document.body.appendChild(canvas);
+                button.innerText = "Hide Graph";
+
+                var data = {
+                    labels: generateLabels(valuesArr.length),
+                    datasets: [{
+                        label: "Temperature",
+                        backgroundColor: "rgba(153, 102, 255, 0.1)",
+                        borderColor: "rgba(153, 102, 255, 0.5)",
+                        borderWidth: 1,
+                        data: []
+                    }]
+                };
+
+                var chart = new Chart(canvas, {
+                    type: "line",
+                    data: data,
+                    options: {
+                        responsive: false,
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true
+                                }
+                            }]
+                        }
+                    }
+                });
+
+                var currentIndex = 0;
+                var intervalId = setInterval(function () {
+                    if (currentIndex < valuesArr.length) {
+                        chart.data.datasets[0].data.push(valuesArr[currentIndex]);
+                        chart.update();
+                        currentIndex++;
+                    } else {
+                        clearInterval(intervalId);
+                    }
+                }, 2000);
+            }
+        });
+
+        deleteButton.addEventListener("click", function () {
+
+            $.ajax({
+                url: "/Indicator/GetIndicators",
+                type: "GET",
+                success: function (data) {
+                    data.forEach(function (indicator) {
+                        if (indicator.x === x && indicator.y === y){
+                            $.ajax({
+                                url: '/Indicator/Delete',
+                                type: 'POST',
+                                data: {
+                                    id: indicator.id
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            input.remove();
+            button.remove();
+            deleteButton.remove();
+
+        });
     }
 
     $(document).ready(function () {
         $.ajax({
-            url: "/Home/GetIndicators",
+            url: "/Indicator/GetIndicators",
             type: "GET",
             success: function (data) {
                 data.forEach(function (indicator) {
@@ -112,13 +159,15 @@
             var y = event.clientY;
 
             $.ajax({
-                url: "/Home/GenerateValues",
+
+                url: "/Generator/GenerateValues",
                 type: "GET",
                 success: function (values) {
+
                     createInputAndButton(x, y, values);
 
                     $.ajax({
-                        url: "/Home/SaveInput",
+                        url: "/Indicator/SaveInput",
                         type: "POST",
                         data: {
                             x: x,
@@ -131,31 +180,32 @@
         }
     });
 
+    function changeBackground() {
+        var newId = document.getElementById("bgNumber").value;
+        selectedId = parseInt(newId);
+        var img = document.querySelector('img');
+        img.src = '@Url.Action("GetBackgroundImage", "Home")/' + selectedId;
+    }
+
 </script>
 
 <div class="text-center">
 
     <form method="post" enctype="multipart/form-data" action="@Url.Action("UploadBackground", "Home")">
-        <input type="file" name="imageFile" /><button>Upload</button>
+        <input type="file" name="imageFile" />
+        <button>Upload</button>
     </form>
 
+    @{
+        int selectedId = 1;
+    }
 
-    <img src="@Url.Action("GetBackgroundImage", "Home", new { id = 2 })" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;" />
+    <div>
+        <input type="number" id="bgNumber" value="@selectedId" />
+        <button onclick="changeBackground()">Change Background</button>
+    </div>
 
-    <table class="table">
-        <tr><th>X</th><th>Y</th><th>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.X</td>
-                <td>@item.Y</td>
+    <img src="@Url.Action("GetBackgroundImage", "Home", new { id = selectedId })" 
+    style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;" />
 
-                <td>
-                    <form asp-controller="Home" asp-action="Delete" method="post"  asp-route-id="@item.Id">
-                        <input type="submit" value="Delete" />
-                    </form>
-                </td>
-            </tr>
-        }
-    </table>
 </div>

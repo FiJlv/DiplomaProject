@@ -1,13 +1,12 @@
 using DiplomaProject.Data;
 using Microsoft.EntityFrameworkCore;
 
-
 var builder = WebApplication.CreateBuilder(args);
 
-// получаем строку подключения из файла конфигурации
+// отримуємо рядок підключення з конфігураційного файлу
 string connection = builder.Configuration.GetConnectionString("DefaultConnection");
 
-// добавляем контекст ApplicationContext в качестве сервиса в приложение
+// додаємо контекст ApplicationContext як сервіс у додаток
 builder.Services.AddDbContext<ApplicationContext>(options => options.UseSqlServer(connection));
 
 builder.Services.AddControllersWithViews();
