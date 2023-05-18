@@ -4,20 +4,24 @@
 
 <div class="text-center">
 
+    <!--Форма для завантаження фонового зображення-->
     <form method="post" enctype="multipart/form-data" action="@Url.Action("UploadBackground", "Home")">
         <input type="file" name="imageFile" />
         <button>Upload</button>
     </form>
 
     @{
+        <!--Фон по замовченню-->
         int selectedId = 1;
     }
 
     <div>
+        <!--Відображення вибраного фону-->
         <input type="number" id="bgNumber" value="@selectedId" />
         <button onclick="changeBackground()">Change Background</button>
     </div>
 
+    <!-- Відображення фонового зображення на основі вибраного ID-->
     <img src="@Url.Action("GetBackgroundImage", "Home", new { id = selectedId })" 
     style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;" />
 
