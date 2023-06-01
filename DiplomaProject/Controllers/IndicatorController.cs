@@ -1,6 +1,8 @@
 ﻿using DiplomaProject.Data;
 using DiplomaProject.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace DiplomaProject.Controllers
 {
@@ -8,40 +10,42 @@ namespace DiplomaProject.Controllers
     {
         ApplicationContext db;
 
-        // Конструктор контролера, що приймає контекст бази даних
         public IndicatorController(ApplicationContext context)
         {
             db = context;
         }
 
-        // Метод дії для обробки запиту HTTP POST для збереження введених даних
-        // Приймає цілі параметри x і y, а також рядковий параметр temperatureValues
         [HttpPost]
-        public ActionResult SaveInput(int x, int y, string temperatureValues)
+        public ActionResult SaveInput(int x, int y, int baseNum)
         {
-            // Створення нового об’єкту Indicator
             var input = new Indicator
             {
                 X = x,
                 Y = y,
-                TemperatureValues = temperatureValues
+                BaseNum = baseNum,
+                Values = "start"
             };
 
-            // Додавання нового об’єкта Indicator до колекції Indicators у базі даних
-            db.Indicators.Add(input);
-
-            // Збереження змінних 
+            db.Indicators.Add(input); 
             db.SaveChanges();
 
             return new EmptyResult();
         }
 
-        // Метод дії для обробки запиту HTTP GET для отримання індикаторів
-        public IActionResult GetIndicators()
+        [HttpPost]
+        public ActionResult FindInput(int x, int y, int value)
         {
-            // Отримання всіх об’єктів Indicator з бази даних і перетворення їх у формат JSON
-            // Повертає JSON-представлення об’єктів Indicator
-            return Json(db.Indicators.ToList());
+            string str = value.ToString();
+            foreach (var input in db.Indicators)
+            {
+                if (input.X == x && input.Y == y)
+                {
+                    input.Values += ", " + str;          
+                }
+            }
+            db.SaveChanges();
+
+            return new EmptyResult();
         }
 
         [HttpPost]
@@ -67,5 +71,12 @@ namespace DiplomaProject.Controllers
             // Якщо індикатора не існує, повертаємо результат NotFound
             return NotFound();
         }
+
+        public IActionResult GetIndicators()
+        {
+            var list = db.Indicators.ToList();
+            return Json(list);
+        }
+
     }
 }

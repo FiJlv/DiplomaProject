@@ -7,6 +7,7 @@ namespace DiplomaProject.Models
         public int Id { get; set; }
         public int X { get; set; }
         public int Y { get; set; }
-        public string TemperatureValues { get; set; }
+        public int BaseNum { get; set; }
+        public string Values { get; set; }
     }
 }

@@ -1,4 +1,5 @@
 using DiplomaProject.Data;
+using DiplomaProject.Source;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +12,8 @@ builder.Services.AddDbContext<ApplicationContext>(options => options.UseSqlServe
 
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddSignalR();
+
 var app = builder.Build();
 
 app.MapDefaultControllerRoute();
@@ -18,6 +21,11 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapHub<RandomNumberHub>("/randomnumberhub"); // Маршрут для хаба
+});
 
 app.UseAuthorization();
 

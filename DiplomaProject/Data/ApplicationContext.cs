@@ -19,6 +19,10 @@ namespace DiplomaProject.Data
             // Забезпечує створення бази даних та її схеми, якщо вони не існують
             Database.EnsureCreated();
         }
+
+        public ApplicationContext()
+        {
+        }
     }
 
 }

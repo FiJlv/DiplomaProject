@@ -1,17 +1,4 @@
-// Функція для генерації міток
-function generateLabels(length) {
-
-    var labels = [];
-    for (var i = 1; i <= length; i++) {
-        labels.push(i + "s");
-    }
-    return labels;
-}
-
-// Функція для створення поля вводу, кнопки для графіка
-function createInputAndButton(x, y, values) {
-
-    // Створення вхідного елемента
+function createInputAndButton(x, y, baseNum) {
     var input = document.createElement("input");
     input.type = "text";
     input.id = "myInput";
@@ -22,7 +9,6 @@ function createInputAndButton(x, y, values) {
     input.value = "";
     document.body.appendChild(input);
 
-    // Створення кнопки видалення
     var deleteButton = document.createElement("button");
     deleteButton.innerText = "Delete";
     deleteButton.style.position = "absolute";
@@ -31,101 +17,57 @@ function createInputAndButton(x, y, values) {
     deleteButton.type = "button";
     document.body.appendChild(deleteButton);
 
-    // Створення кнопки  "Показати графік".
-    var button = document.createElement("button");
-    button.innerText = "Show Graph";
-    button.style.position = "absolute";
-    button.style.top = (y + 30) + "px";
-    button.style.left = x + "px";
-    button.type = "button";
-    document.body.appendChild(button);
-    input.focus();
+    var showGraphButton = document.createElement("button");
+    showGraphButton.innerText = "ShowGraph";
+    showGraphButton.style.position = "absolute";
+    showGraphButton.style.top = (y + 30) + "px";
+    showGraphButton.style.left = x + "px";
+    showGraphButton.type = "button";
+    document.body.appendChild(showGraphButton);
 
-    // Перетворення значень у масив чисел
-    var valuesArr = values.split(",").map(function (num) {
-        return parseInt(num.trim(), 10);
+    var chart; 
+
+    input.addEventListener("input", function (event) {
+        value = event.target.value;
     });
 
-    // Посилання на елемент <canvas>
-    var canvas = null; 
+    var connection = new signalR.HubConnectionBuilder()
+        .withUrl("/randomnumberhub") 
+        .build();
 
-    // Посилання на об'єкт Chart
-    var chart = null; 
+    connection.on("ReceiveNumber", function (number) {
+        input.value = number; 
 
-    // Обробник події для кнопки "Показати графік".
-    button.addEventListener("click", function () {
-        if (button.innerText === "Hide Graph") {
-              // Якщо текст  "Приховати графік", то графік уже відображається і його потрібно приховати
-            button.innerText = "Show Graph";
-            if (chart) {
-                chart.destroy(); // Знищуємо графічний об'єкт, щоб звільнити ресурси
+        $.ajax({
+            url: "/Indicator/FindInput",
+            type: "POST",
+            data: {
+                x: x,
+                y: y,
+                value: number
             }
-            if (canvas) {
-                canvas.remove(); // // Видаляємо canvas з DOM
-            }
-            canvas = null;
-            chart = null;
-        } else {
-             // Якщо текст не "Приховати графік", то графік ще не відображається і його потрібно створити
-            if (!canvas) {
-                canvas = document.createElement("canvas");
-                canvas.width = 300;
-                canvas.height = 200;
-                canvas.style.position = "absolute";
-                canvas.style.top = (y + 45) + "px";
-                canvas.style.left = x + "px";
-                document.body.appendChild(canvas);
-            }
-            button.innerText = "Hide Graph";
+        });
 
-            var data = {
-                labels: generateLabels(valuesArr.length),
-                datasets: [{
-                    label: "Temperature",
-                    backgroundColor: "rgba(153, 102, 255, 0.1)",
-                    borderColor: "rgba(153, 102, 255, 0.5)",
-                    borderWidth: 1,
-                    data: []
-                }]
-            };
-
-            if (chart) {
-                chart.destroy(); // Знищуємо попередній графічний об'єкт, якщо він існує
-            }
-
-            chart = new Chart(canvas, {
-                type: "line",
-                data: data,
-                options: {
-                    responsive: false,
-                    scales: {
-                        yAxes: [{
-                            ticks: {
-                                beginAtZero: true
-                            }
-                        }]
-                    }
-                }
-            });
-
-            var currentIndex = 0;
-            var intervalId = setInterval(function () {
-                if (currentIndex < valuesArr.length) {
-                    input.value = valuesArr[currentIndex];
-                    chart.data.datasets[0].data.push(valuesArr[currentIndex]);
-                    chart.update();
-                    currentIndex++;
-                } else {
-                    clearInterval(intervalId);
-                }
-            }, 2000);
+        if (chart) {
+            chart.data.labels.push("");
+            chart.data.datasets[0].data.push(number);
+            chart.update();
         }
     });
 
-    // Обробник події для кнопки "Видалити"
-    deleteButton.addEventListener("click", function () {
+    connection.start()
+        .then(function () {
+           
+            connection.invoke("OnConnectedAsync", baseNum)
+                .catch(function (err) {
+                    console.error(err.toString());
+                });
+        })
+        .catch(function (err) {
+            console.error(err.toString());
+        });
 
-        // Відправляємо AJAX-запит на сервер для видалення відповідного індикатора
+    deleteButton.addEventListener("click", function () {
         $.ajax({
             url: "/Indicator/GetIndicators",
             type: "GET",
@@ -144,59 +86,101 @@ function createInputAndButton(x, y, values) {
             }
         });
 
-        // Видаляємо елементи з DOM
         input.remove();
-        button.remove();
         deleteButton.remove();
-        chart.destroy();
+        showGraphButton.remove();
+        if (chart) {
+            chart.destroy();
+        }
+    });
 
+    var chartContainer = null; 
+    var showGraph = true; 
+
+    showGraphButton.addEventListener("click", function () {
+        if (chartContainer) {
+            
+            chartContainer.remove();
+            chartContainer = null;
+            showGraphButton.innerText = "ShowGraph";
+            showGraph = true;
+        } else {
+          
+            chartContainer = document.createElement("div");
+            chartContainer.style.width = "400px"; 
+            chartContainer.style.height = "200px"; 
+            chartContainer.style.position = "absolute";
+            chartContainer.style.top = (y + 50) + "px";
+            chartContainer.style.left = x + "px";
+            document.body.appendChild(chartContainer);
+
+            var canvas = document.createElement("canvas");
+            canvas.id = "myChart";
+            chartContainer.appendChild(canvas);
+
+            var ctx = canvas.getContext("2d");
+
+            chart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: "Values",
+                        data: [],
+                        borderColor: "blue",
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            showGraphButton.innerText = "HideGraph";
+            showGraph = false;
+        }
     });
 }
 
 $(document).ready(function () {
-    // Відправляємо AJAX-запит на сервер для отримання даних індикаторів
     $.ajax({
         url: "/Indicator/GetIndicators",
-        type: "GET",
+        type: "POST",
         success: function (data) {
             data.forEach(function (indicator) {
-                // Створюємо поле введення і кнопку для кожного індикатора
-                createInputAndButton(indicator.x, indicator.y, indicator.temperatureValues);
+                let baseNum = indicator.baseNum;
+                let baseNumStr = baseNum.toString();
+                createInputAndButton(indicator.x, indicator.y, baseNumStr);
             });
         }
     });
 });
 
-// Обробник події кліка на документе
 document.addEventListener("click", function (event) {
     if (event.target.tagName !== "INPUT" && event.target.tagName !== "BUTTON") {
 
-        // Отримуємо координати кліка
         var x = event.clientX;
         var y = event.clientY;
+        var baseNum = prompt("Enter number: ");
 
-        // Надсилаємо AJAX-запит на сервер для генерації значень
+        createInputAndButton(x, y, baseNum); 
+
         $.ajax({
-
-            url: "/Generator/GenerateValues",
-            type: "GET",
-            success: function (values) {
-
-                // Створюємо поле введення та кнопку для нового індикатора
-                createInputAndButton(x, y, values);
-
-                 // Отправляем AJAX-запрос на сервер для сохранения введенных значений индикатора
-                $.ajax({
-                    url: "/Indicator/SaveInput",
-                    type: "POST",
-                    data: {
-                        x: x,
-                        y: y,
-                        temperatureValues: values
-                    }
-                });
+            url: "/Indicator/SaveInput",
+            type: "POST",
+            data: {
+                x: x,
+                y: y,
+                baseNum: baseNum
             }
         });
+
     }
 });
 
