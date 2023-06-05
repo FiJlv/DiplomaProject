@@ -1,4 +1,5 @@
-function createInputAndButton(x, y, baseNum) {
+function createInputAndButton(x, y, baseNum, valueOnTheChart) {
+
     var input = document.createElement("input");
     input.type = "text";
     input.id = "myInput";
@@ -18,12 +19,39 @@ function createInputAndButton(x, y, baseNum) {
     document.body.appendChild(deleteButton);
 
     var showGraphButton = document.createElement("button");
-    showGraphButton.innerText = "ShowGraph";
+    showGraphButton.innerText = "Show graph";
     showGraphButton.style.position = "absolute";
     showGraphButton.style.top = (y + 30) + "px";
     showGraphButton.style.left = x + "px";
     showGraphButton.type = "button";
     document.body.appendChild(showGraphButton);
+
+    var changeBaseNumButton = document.createElement("button");
+    changeBaseNumButton.innerText = "Change base number";
+    changeBaseNumButton.style.position = "absolute";
+    changeBaseNumButton.style.top = (y + 70) + "px";
+    changeBaseNumButton.style.left = x + "px";
+    changeBaseNumButton.type = "button";
+    document.body.appendChild(changeBaseNumButton);
+
+    changeBaseNumButton.addEventListener("click", function () {
+
+        var newBaseNum = prompt("Enter new number: ");
+        baseNum = newBaseNum;
+
+        if (newBaseNum !== null) {
+
+            $.ajax({
+                url: "/Indicator/EditInput",
+                type: "POST",
+                data: {
+                    x: x,
+                    y: y,
+                    baseNum: newBaseNum
+                }
+            });
+        }
+    });
 
     var chart; 
 
@@ -39,7 +67,7 @@ function createInputAndButton(x, y, baseNum) {
         input.value = number; 
 
         $.ajax({
-            url: "/Indicator/FindInput",
+            url: "/Indicator/SavingValues",
             type: "POST",
             data: {
                 x: x,
@@ -85,10 +113,12 @@ function createInputAndButton(x, y, baseNum) {
                 });
             }
         });
-
+   
         input.remove();
         deleteButton.remove();
         showGraphButton.remove();
+        changeBaseNumButton.remove();
+
         if (chart) {
             chart.destroy();
         }
@@ -110,7 +140,7 @@ function createInputAndButton(x, y, baseNum) {
             chartContainer.style.width = "400px"; 
             chartContainer.style.height = "200px"; 
             chartContainer.style.position = "absolute";
-            chartContainer.style.top = (y + 50) + "px";
+            chartContainer.style.top = (y + 90) + "px";
             chartContainer.style.left = x + "px";
             document.body.appendChild(chartContainer);
 
@@ -125,7 +155,7 @@ function createInputAndButton(x, y, baseNum) {
                 data: {
                     labels: [],
                     datasets: [{
-                        label: "Values",
+                        label: valueOnTheChart,
                         data: [],
                         borderColor: "blue",
                         fill: false
@@ -156,7 +186,7 @@ $(document).ready(function () {
             data.forEach(function (indicator) {
                 let baseNum = indicator.baseNum;
                 let baseNumStr = baseNum.toString();
-                createInputAndButton(indicator.x, indicator.y, baseNumStr);
+                createInputAndButton(indicator.x, indicator.y, baseNumStr, indicator.valueOnTheChart);
             });
         }
     });
@@ -168,8 +198,9 @@ document.addEventListener("click", function (event) {
         var x = event.clientX;
         var y = event.clientY;
         var baseNum = prompt("Enter number: ");
+        var valueOnTheChart = prompt("Enter values: ");
 
-        createInputAndButton(x, y, baseNum); 
+        createInputAndButton(x, y, baseNum, valueOnTheChart); 
 
         $.ajax({
             url: "/Indicator/SaveInput",
@@ -177,7 +208,8 @@ document.addEventListener("click", function (event) {
             data: {
                 x: x,
                 y: y,
-                baseNum: baseNum
+                baseNum: baseNum,
+                valueOnTheChart: valueOnTheChart 
             }
         });
 

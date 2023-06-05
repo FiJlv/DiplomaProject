@@ -3,6 +3,7 @@ using DiplomaProject.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 
 namespace DiplomaProject.Controllers
 {
@@ -16,14 +17,36 @@ namespace DiplomaProject.Controllers
         }
 
         [HttpPost]
-        public ActionResult SaveInput(int x, int y, int baseNum)
+        public ActionResult EditInput(int x, int y, int baseNum)
         {
+            foreach (var input in db.Indicators)
+            {
+                if (input.X == x && input.Y == y)
+                {
+                    input.BaseNum = baseNum;
+                }
+            }
+
+            db.SaveChanges();
+            return new EmptyResult();
+
+        }
+
+        [HttpPost]
+        public ActionResult SaveInput(int x, int y, int baseNum, string valueOnTheChart)
+        {
+            if(valueOnTheChart == null)
+            {
+                valueOnTheChart = "empty";
+            }
+
             var input = new Indicator
             {
                 X = x,
                 Y = y,
                 BaseNum = baseNum,
-                Values = "start"
+                Values = "start",
+                ValueOnTheChart = valueOnTheChart
             };
 
             db.Indicators.Add(input); 
@@ -33,7 +56,7 @@ namespace DiplomaProject.Controllers
         }
 
         [HttpPost]
-        public ActionResult FindInput(int x, int y, int value)
+        public ActionResult SavingValues(int x, int y, int value)
         {
             string str = value.ToString();
             foreach (var input in db.Indicators)
