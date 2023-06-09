@@ -16,6 +16,7 @@ namespace DiplomaProject.Controllers
             db = context;
         }
 
+        // Метод дії для редагування вхідних параметрів індикатора
         [HttpPost]
         public ActionResult EditInput(int x, int y, int baseNum)
         {
@@ -32,6 +33,7 @@ namespace DiplomaProject.Controllers
 
         }
 
+        // Метод дії для збереження нового індикатора
         [HttpPost]
         public ActionResult SaveInput(int x, int y, int baseNum, string valueOnTheChart)
         {
@@ -55,6 +57,7 @@ namespace DiplomaProject.Controllers
             return new EmptyResult();
         }
 
+        // Метод дії для збереження значень індикатора
         [HttpPost]
         public ActionResult SavingValues(int x, int y, int value)
         {

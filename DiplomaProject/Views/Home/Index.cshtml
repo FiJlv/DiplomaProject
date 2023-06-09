@@ -7,8 +7,8 @@
 <div class="text-center">
 
     <!--Форма для завантаження фонового зображення-->
-    <form method="post" enctype="multipart/form-data" action="@Url.Action("UploadBackground", "Home")">
-        <input type="file" name="imageFile" />
+    <form lang="en" method="post" enctype="multipart/form-data" action="@Url.Action("UploadBackground", "Home")">
+        <input type="file" name="imageFile"/>
         <button>Upload</button>
     </form>
 
@@ -22,6 +22,7 @@
         <input type="number" id="bgNumber" value="@selectedId" />
         <button onclick="changeBackground()">Change Background</button>
     </div>
+
 
     <!-- Відображення фонового зображення на основі вибраного ID-->
     <img src="@Url.Action("GetBackgroundImage", "Home", new { id = selectedId })" 

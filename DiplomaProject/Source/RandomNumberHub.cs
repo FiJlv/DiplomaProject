@@ -16,7 +16,7 @@ namespace DiplomaProject.Source
 
             while (true)
             {
-                int randomNumber = baseNumValue + random.Next(baseNumValue - baseNumValue / 10, baseNumValue + baseNumValue / 10); 
+                int randomNumber = baseNumValue + random.Next(baseNumValue - baseNumValue / 10, baseNumValue + baseNumValue / 10);
                 await Clients.Client(Context.ConnectionId).SendAsync("ReceiveNumber", randomNumber); // Відправка кліенту
                 await Task.Delay(1000);
             }
